@@ -81,6 +81,7 @@ save(train, file="train.RData")
 
 
 
+
 # analysis with subset of data, when memory is not enough 
 #http://www.columbia.edu/~sjm2186/EPIC_R/EPIC_R_BigData.pdf
 rows <- [1:500]
