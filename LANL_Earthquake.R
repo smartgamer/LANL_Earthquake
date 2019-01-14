@@ -8,7 +8,50 @@ library(tidyverse)
 
 train10lines=read.csv("../LANLEarthquakeData/train.csv", nrows=10)
 train1000lines=read.csv("../LANLEarthquakeData/train.csv", nrows=1000)
+head(train1000lines)
+library(data.table)
+train = fread('../LANLEarthquakeData/train.csv', header = T, sep = ',')
 
+# because training data is too big, choose a subset to do modeling
+set.seed(1001)
+subind=sample(1:629145480, 1000000, replace=FALSE)
+trainSub=train[subind,]
+ls()
+rm(train)
+summary(trainSub)
+ggplot(data=trainSub)+
+  geom_point(mapping=aes(x=acoustic_data, y=time_to_failure))+
+  theme_minimal()
+plot(trainSub$acoustic_data, trainSub$time_to_failure)
+hist(trainSub$time_to_failure)
+boxplot(trainSub$time_to_failure)
+hist(trainSub$acoustic_data)
+save(trainSub, file="trainSub.RData")
+
+
+library(caret)
+inTrain = createDataPartition(y=trainSub$acoustic_data,
+p=0.75, list=FALSE)
+training = trainSub[inTrain,]
+testing = trainSub[-inTrain,]
+dim(training)
+set.seed(1001)
+modelFit = train(time_to_failure  ~., data=training, method="glm") #without preprocess
+modelFit = train(time_to_failure  ~., data=training, preProcess=c("center","scale"), method="glm")  #with preprocess
+modelFit
+modelFit$finalModel
+predictions= predict(modelFit,newdata=testing)
+predictions
+confusionMatrix(predictions,testing$time_to_failure)
+plot(predictions, testing$time_to_failure)  #
+rm(modelFit)
+rm(predictions)
+
+
+
+
+
+# read large csv file #
 # 1. using readr function: read_csv_chunked, faster than read_csv, but memory is not enough, dead computer #
 f <- function(x, pos) subset(x, time_to_failure >= 0) 
 train=read_csv_chunked("../LANLEarthquakeData/train.csv", callback=DataFrameCallback$new(f), chunk_size = 10000, col_names = TRUE)
